@@ -22,7 +22,6 @@ Run locally:
 from __future__ import annotations
 
 import io
-import json
 import logging
 import os
 import sys
@@ -33,9 +32,9 @@ from typing import Any
 
 import torch
 import torch.nn.functional as F
-from PIL import Image
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
+from PIL import Image
 from torchvision import transforms
 
 # Allow running from repo root OR from inside src/
@@ -43,8 +42,8 @@ _SRC = Path(__file__).parent
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from dataset import get_class_names   # noqa: E402
-from model import get_model           # noqa: E402
+from dataset import get_class_names
+from model import get_model
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -72,18 +71,21 @@ _STATE: dict[str, Any] = {
 # ---------------------------------------------------------------------------
 
 _CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
-_CIFAR10_STD  = (0.2470, 0.2435, 0.2616)
+_CIFAR10_STD = (0.2470, 0.2435, 0.2616)
 
-_INFER_TRANSFORM = transforms.Compose([
-    transforms.Resize((32, 32)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=_CIFAR10_MEAN, std=_CIFAR10_STD),
-])
+_INFER_TRANSFORM = transforms.Compose(
+    [
+        transforms.Resize((32, 32)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=_CIFAR10_MEAN, std=_CIFAR10_STD),
+    ]
+)
 
 
 # ---------------------------------------------------------------------------
 # Model loader
 # ---------------------------------------------------------------------------
+
 
 def _load_model() -> None:
     """Load the model checkpoint into _STATE. Called once at startup."""
@@ -134,6 +136,7 @@ def _load_model() -> None:
 # FastAPI app with lifespan
 # ---------------------------------------------------------------------------
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load model on startup; clean up on shutdown."""
@@ -156,6 +159,7 @@ app = FastAPI(
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @app.get("/health", summary="Health check")
 async def health() -> JSONResponse:
@@ -221,22 +225,23 @@ async def predict(image: UploadFile = File(...)) -> JSONResponse:
 
     # ── Inference ───────────────────────────────────────────────────────
     with torch.no_grad():
-        logits = _STATE["model"](tensor)          # (1, num_classes)
-        probs  = F.softmax(logits, dim=1)[0]      # (num_classes,)
+        logits = _STATE["model"](tensor)  # (1, num_classes)
+        probs = F.softmax(logits, dim=1)[0]  # (num_classes,)
 
     class_names: list[str] = _STATE["class_names"]
     prob_list = probs.cpu().tolist()
-    top_idx   = int(probs.argmax().item())
+    top_idx = int(probs.argmax().item())
 
-    return JSONResponse(content={
-        "class_id":     top_idx,
-        "class_name":   class_names[top_idx],
-        "confidence":   round(prob_list[top_idx], 6),
-        "probabilities": {
-            name: round(p, 6)
-            for name, p in zip(class_names, prob_list)
-        },
-    })
+    return JSONResponse(
+        content={
+            "class_id": top_idx,
+            "class_name": class_names[top_idx],
+            "confidence": round(prob_list[top_idx], 6),
+            "probabilities": {
+                name: round(p, 6) for name, p in zip(class_names, prob_list)
+            },
+        }
+    )
 
 
 @app.get("/", include_in_schema=False)

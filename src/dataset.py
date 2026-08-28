@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import os
 
-import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
@@ -20,27 +19,44 @@ from torchvision import datasets, transforms
 # ---------------------------------------------------------------------------
 
 CIFAR10_CLASSES: list[str] = [
-    "airplane", "automobile", "bird", "cat", "deer",
-    "dog", "frog", "horse", "ship", "truck",
+    "airplane",
+    "automobile",
+    "bird",
+    "cat",
+    "deer",
+    "dog",
+    "frog",
+    "horse",
+    "ship",
+    "truck",
 ]
 
 FASHION_MNIST_CLASSES: list[str] = [
-    "T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
-    "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot",
+    "T-shirt/top",
+    "Trouser",
+    "Pullover",
+    "Dress",
+    "Coat",
+    "Sandal",
+    "Shirt",
+    "Sneaker",
+    "Bag",
+    "Ankle boot",
 ]
 
 # CIFAR-10 channel statistics (pre-computed on training set)
 _CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
-_CIFAR10_STD  = (0.2470, 0.2435, 0.2616)
+_CIFAR10_STD = (0.2470, 0.2435, 0.2616)
 
 # Fashion-MNIST channel statistics
 _FMNIST_MEAN = (0.2860,)
-_FMNIST_STD  = (0.3530,)
+_FMNIST_STD = (0.3530,)
 
 
 # ---------------------------------------------------------------------------
 # Transform factories
 # ---------------------------------------------------------------------------
+
 
 def get_transforms(
     train: bool = True,
@@ -66,45 +82,53 @@ def get_transforms(
     if dataset == "cifar10":
         mean, std = _CIFAR10_MEAN, _CIFAR10_STD
         if train:
-            return transforms.Compose([
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomCrop(32, padding=4),
-                transforms.ColorJitter(
-                    brightness=0.2, contrast=0.2, saturation=0.2
-                ),
+            return transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.RandomCrop(32, padding=4),
+                    transforms.ColorJitter(
+                        brightness=0.2, contrast=0.2, saturation=0.2
+                    ),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=mean, std=std),
+                    transforms.RandomErasing(p=0.1),
+                ]
+            )
+        return transforms.Compose(
+            [
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
-                transforms.RandomErasing(p=0.1),
-            ])
-        return transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std),
-        ])
+            ]
+        )
 
     elif dataset == "fashionmnist":
         mean, std = _FMNIST_MEAN, _FMNIST_STD
         if train:
-            return transforms.Compose([
-                transforms.RandomHorizontalFlip(p=0.5),
-                transforms.RandomCrop(28, padding=4),
+            return transforms.Compose(
+                [
+                    transforms.RandomHorizontalFlip(p=0.5),
+                    transforms.RandomCrop(28, padding=4),
+                    transforms.ToTensor(),
+                    transforms.Normalize(mean=mean, std=std),
+                ]
+            )
+        return transforms.Compose(
+            [
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std),
-            ])
-        return transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std),
-        ])
+            ]
+        )
 
     else:
         raise ValueError(
-            f"Unsupported dataset '{dataset}'. "
-            "Choose 'cifar10' or 'fashionmnist'."
+            f"Unsupported dataset '{dataset}'. " "Choose 'cifar10' or 'fashionmnist'."
         )
 
 
 # ---------------------------------------------------------------------------
 # DataLoader factory
 # ---------------------------------------------------------------------------
+
 
 def get_dataloaders(
     data_dir: str,
@@ -130,33 +154,32 @@ def get_dataloaders(
     """
     # Safe default for num_workers (Windows / Docker compatibility)
     if num_workers is None:
-        if os.name == "nt":          # Windows
+        if os.name == "nt":  # Windows
             num_workers = 0
         else:
             num_workers = min(4, os.cpu_count() or 1)
 
     dataset_lower = dataset.lower().replace("-", "").replace("_", "")
-    train_tf = get_transforms(train=True,  dataset=dataset_lower)
-    val_tf   = get_transforms(train=False, dataset=dataset_lower)
+    train_tf = get_transforms(train=True, dataset=dataset_lower)
+    val_tf = get_transforms(train=False, dataset=dataset_lower)
 
     if dataset_lower == "cifar10":
         train_ds = datasets.CIFAR10(
-            root=data_dir, train=True,  download=True, transform=train_tf
+            root=data_dir, train=True, download=True, transform=train_tf
         )
         val_ds = datasets.CIFAR10(
             root=data_dir, train=False, download=True, transform=val_tf
         )
     elif dataset_lower == "fashionmnist":
         train_ds = datasets.FashionMNIST(
-            root=data_dir, train=True,  download=True, transform=train_tf
+            root=data_dir, train=True, download=True, transform=train_tf
         )
         val_ds = datasets.FashionMNIST(
             root=data_dir, train=False, download=True, transform=val_tf
         )
     else:
         raise ValueError(
-            f"Unsupported dataset '{dataset}'. "
-            "Choose 'cifar10' or 'fashionmnist'."
+            f"Unsupported dataset '{dataset}'. " "Choose 'cifar10' or 'fashionmnist'."
         )
 
     train_loader = DataLoader(

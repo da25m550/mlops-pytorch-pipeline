@@ -11,13 +11,12 @@ from __future__ import annotations
 
 import io
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
 import torch
-import torch.nn as nn
 from PIL import Image
+from torch import nn
 
 # ---------------------------------------------------------------------------
 # Path setup: allow importing from src/ regardless of working directory
@@ -25,13 +24,13 @@ from PIL import Image
 _REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from dataset import get_class_names, get_dataloaders, get_transforms  # noqa: E402
-from model import SimpleCNN, ResNet18CIFAR, get_model                  # noqa: E402
-
+from dataset import get_class_names, get_transforms
+from model import get_model
 
 # ===========================================================================
 # Fixtures
 # ===========================================================================
+
 
 @pytest.fixture(scope="session")
 def device() -> torch.device:
@@ -68,6 +67,7 @@ def dummy_png_bytes() -> bytes:
 # ===========================================================================
 # Model tests
 # ===========================================================================
+
 
 class TestGetModel:
     def test_resnet18_output_shape(self, resnet18_model, dummy_cifar_batch):
@@ -116,8 +116,9 @@ class TestGetModel:
             out = resnet18_model(images)
         row_sums = out.sum(dim=1)
         # If softmax were applied, all sums would be ~1.0
-        assert not torch.allclose(row_sums, torch.ones(4), atol=0.01), \
-            "Model appears to apply softmax internally (should return raw logits)"
+        assert not torch.allclose(
+            row_sums, torch.ones(4), atol=0.01
+        ), "Model appears to apply softmax internally (should return raw logits)"
 
     def test_gradient_flows(self, dummy_cifar_batch):
         """Verify that loss.backward() produces non-zero gradients."""
@@ -129,9 +130,7 @@ class TestGetModel:
         loss = criterion(out, labels)
         loss.backward()
         grad_norms = [
-            p.grad.norm().item()
-            for p in model.parameters()
-            if p.grad is not None
+            p.grad.norm().item() for p in model.parameters() if p.grad is not None
         ]
         assert len(grad_norms) > 0, "No gradients computed"
         assert any(g > 0 for g in grad_norms), "All gradients are zero"
@@ -147,6 +146,7 @@ class TestGetModel:
 # ===========================================================================
 # Dataset / transform tests
 # ===========================================================================
+
 
 class TestTransforms:
     def test_train_transform_returns_tensor(self):
@@ -196,6 +196,7 @@ class TestClassNames:
 # Checkpoint save / load round-trip
 # ===========================================================================
 
+
 class TestCheckpointRoundTrip:
     def test_save_and_load(self, resnet18_model, dummy_cifar_batch, tmp_path):
         """Save a checkpoint and reload it; verify predictions are identical."""
@@ -226,32 +227,38 @@ class TestCheckpointRoundTrip:
         with torch.no_grad():
             logits_after = fresh_model(images)
 
-        assert torch.allclose(logits_before, logits_after, atol=1e-5), \
-            "Logits differ after checkpoint round-trip"
+        assert torch.allclose(
+            logits_before, logits_after, atol=1e-5
+        ), "Logits differ after checkpoint round-trip"
 
 
 # ===========================================================================
 # Serve module tests (no HTTP server required)
 # ===========================================================================
 
+
 class TestServeInference:
     """Test the inference logic in serve.py without starting a server."""
 
     def test_infer_transform_shape(self, dummy_png_bytes):
         from torchvision import transforms
+
         _CIFAR10_MEAN = (0.4914, 0.4822, 0.4465)
-        _CIFAR10_STD  = (0.2470, 0.2435, 0.2616)
-        tf = transforms.Compose([
-            transforms.Resize((32, 32)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=_CIFAR10_MEAN, std=_CIFAR10_STD),
-        ])
+        _CIFAR10_STD = (0.2470, 0.2435, 0.2616)
+        tf = transforms.Compose(
+            [
+                transforms.Resize((32, 32)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=_CIFAR10_MEAN, std=_CIFAR10_STD),
+            ]
+        )
         img = Image.open(io.BytesIO(dummy_png_bytes)).convert("RGB")
         t = tf(img)
         assert t.shape == (3, 32, 32)
 
     def test_softmax_sums_to_one(self, resnet18_model, dummy_cifar_batch):
         import torch.nn.functional as F
+
         images, _ = dummy_cifar_batch
         resnet18_model.eval()
         with torch.no_grad():
