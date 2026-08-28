@@ -24,8 +24,8 @@ from torch import nn
 _REPO_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
-from dataset import get_class_names, get_transforms  # noqa: E402
-from model import get_model  # noqa: E402
+from dataset import get_class_names, get_transforms
+from model import get_model
 
 # ===========================================================================
 # Fixtures
