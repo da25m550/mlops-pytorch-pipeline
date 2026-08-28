@@ -1,0 +1,138 @@
+# =============================================================================
+# k8s/serving-deployment.yaml
+# Kubernetes Deployment for the CIFAR-10 FastAPI inference server.
+#
+# Apply:
+#   kubectl apply -f k8s/serving-deployment.yaml
+#
+# Verify:
+#   kubectl get deployment model-serving -n ml-training
+#   kubectl rollout status deployment/model-serving -n ml-training
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: model-serving
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+    component: serving
+    version: v1
+spec:
+  # ── Replica count ──────────────────────────────────────────────────────────
+  replicas: 2
+
+  # ── Pod selector ──────────────────────────────────────────────────────────
+  selector:
+    matchLabels:
+      app: model-serving
+
+  # ── Rolling update strategy ────────────────────────────────────────────────
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1          # Allow 1 extra pod during rollout
+      maxUnavailable: 0    # Never take a pod down before a new one is ready
+
+  # ── Pod template ──────────────────────────────────────────────────────────
+  template:
+    metadata:
+      labels:
+        app: model-serving
+        project: mlops-pytorch-pipeline
+        component: serving
+        version: v1
+      annotations:
+        # Prometheus scrape annotations (optional)
+        prometheus.io/scrape: "false"
+
+    spec:
+      # ── Security context ────────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+
+      # ── Graceful shutdown ────────────────────────────────────────────────
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: serving
+          image: mlops-serve:v1
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # ── Environment variables ──────────────────────────────────────
+          env:
+            - name: CHECKPOINT_PATH
+              value: /app/checkpoints/classifier_v1.pt
+            - name: MODEL_ARCH
+              value: resnet18
+            - name: NUM_CLASSES
+              value: "10"
+            - name: PORT
+              value: "8080"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+
+          # ── Resource requests & limits ─────────────────────────────────
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
+          # ── Volume mounts ──────────────────────────────────────────────
+          volumeMounts:
+            # Mount checkpoint PVC read-only (serving never writes checkpoints)
+            - name: checkpoints-volume
+              mountPath: /app/checkpoints
+              readOnly: true
+
+          # ── Liveness probe ─────────────────────────────────────────────
+          # Restarts the container if /health stops responding
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+
+          # ── Readiness probe ────────────────────────────────────────────
+          # Removes the pod from the Service endpoints until it is ready
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+            successThreshold: 1
+
+          # ── Startup probe ──────────────────────────────────────────────
+          # Gives the container up to 60 s to load the model on first start
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12   # 12 × 5 s = 60 s max startup time
+
+      # ── Volumes ───────────────────────────────────────────────────────────
+      volumes:
+        - name: checkpoints-volume
+          persistentVolumeClaim:
+            claimName: model-checkpoints-pvc
+            readOnly: true

@@ -1,0 +1,98 @@
+# =============================================================================
+# docker/Dockerfile.serve
+# Dockerfile for the CIFAR-10 model serving container (FastAPI + uvicorn).
+#
+# Design goals:
+#   - Slim image: CPU-only PyTorch wheel, no training libraries
+#   - Non-root user for security
+#   - Built-in HEALTHCHECK
+#   - Exposes port 8080
+#
+# Build:
+#   docker build -f docker/Dockerfile.serve -t mlops-serve:v1 .
+#
+# Run:
+#   docker run --rm -p 8080:8080 \
+#     -v $(pwd)/checkpoints:/app/checkpoints \
+#     mlops-serve:v1
+#
+# Override checkpoint path:
+#   docker run --rm -p 8080:8080 \
+#     -e CHECKPOINT_PATH=/app/checkpoints/classifier_v1.pt \
+#     -v $(pwd)/checkpoints:/app/checkpoints \
+#     mlops-serve:v1
+# =============================================================================
+
+FROM python:3.11-slim
+
+# ---------------------------------------------------------------------------
+# Metadata
+# ---------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="mlops-serve" \
+      org.opencontainers.image.description="CIFAR-10 FastAPI inference server" \
+      org.opencontainers.image.version="1.0.0"
+
+# ---------------------------------------------------------------------------
+# System dependencies (minimal)
+# ---------------------------------------------------------------------------
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ---------------------------------------------------------------------------
+# Python dependencies
+# ---------------------------------------------------------------------------
+WORKDIR /app
+
+# Copy requirements first to leverage layer caching
+COPY requirements/serve.txt ./requirements/serve.txt
+
+RUN pip install --upgrade pip==24.2 && \
+    pip install --no-cache-dir -r requirements/serve.txt
+
+# ---------------------------------------------------------------------------
+# Application source
+# ---------------------------------------------------------------------------
+COPY src/model.py   ./src/model.py
+COPY src/dataset.py ./src/dataset.py
+COPY src/serve.py   ./src/serve.py
+
+# ---------------------------------------------------------------------------
+# Runtime configuration
+# ---------------------------------------------------------------------------
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    # Default checkpoint location (override via -e or K8s env)
+    CHECKPOINT_PATH=/app/checkpoints/classifier_v1.pt \
+    MODEL_ARCH=resnet18 \
+    NUM_CLASSES=10 \
+    HOST=0.0.0.0 \
+    PORT=8080
+
+# Create mount-point directory for the checkpoint PVC
+RUN mkdir -p /app/checkpoints
+
+# ---------------------------------------------------------------------------
+# Non-root user (UID 1001 to avoid collision with training container)
+# ---------------------------------------------------------------------------
+RUN useradd --uid 1001 --no-create-home --shell /bin/false appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# ---------------------------------------------------------------------------
+# Expose & health check
+# ---------------------------------------------------------------------------
+EXPOSE 8080
+
+# Docker HEALTHCHECK: polls /health every 30 s; marks unhealthy after 3 fails
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# ---------------------------------------------------------------------------
+# Entry point
+# ---------------------------------------------------------------------------
+CMD ["uvicorn", "src.serve:app", \
+     "--host", "0.0.0.0", \
+     "--port", "8080", \
+     "--log-level", "info", \
+     "--workers", "1"]

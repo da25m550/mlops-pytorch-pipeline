@@ -1,0 +1,26 @@
+# =============================================================================
+# training_config_local.yaml
+# Local development override — uses relative paths instead of /app/* mounts.
+# Usage:
+#   python src/train.py --config configs/training_config_local.yaml
+# =============================================================================
+
+model:
+  architecture: resnet18
+  num_classes: 10
+  pretrained: false
+
+training:
+  epochs: 10
+  batch_size: 64
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  early_stopping_patience: 3
+
+data:
+  dataset: cifar10
+  data_dir: ./data
+
+output:
+  checkpoint_dir: ./checkpoints
+  model_name: classifier_v1.pt

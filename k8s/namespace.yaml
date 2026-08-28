@@ -1,0 +1,11 @@
+# =============================================================================
+# k8s/namespace.yaml
+# Dedicated namespace for all ML training and serving workloads.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+    managed-by: kubectl

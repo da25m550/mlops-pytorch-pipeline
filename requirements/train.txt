@@ -1,0 +1,31 @@
+# =============================================================================
+# requirements/train.txt
+# Pinned dependencies for the training container.
+#
+# Install (CPU-only, avoids ~2 GB CUDA download):
+#   pip install --no-cache-dir -r requirements/train.txt
+#
+# If disk quota is tight, set cache dir first:
+#   export PIP_CACHE_DIR=/path/to/workspace/.pip_cache
+# =============================================================================
+
+# ── CPU-only PyTorch index (added alongside PyPI, not replacing it) ──────────
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# ── Core ML ──────────────────────────────────────────────────────────────────
+torch==2.3.1+cpu
+torchvision==0.18.1+cpu
+
+# ── Config & utilities ───────────────────────────────────────────────────────
+PyYAML==6.0.2
+numpy==1.26.4
+
+# ── Progress / logging ───────────────────────────────────────────────────────
+tqdm==4.66.4
+
+# ── Image I/O (needed by torchvision datasets) ───────────────────────────────
+Pillow==10.4.0
+
+# ── Testing (included so CI can run tests in the training image) ──────────────
+pytest==8.3.2
+pytest-cov==5.0.0

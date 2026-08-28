@@ -1,0 +1,67 @@
+# =============================================================================
+# docker-compose.yml
+# Convenience file for local Docker-based development and testing.
+#
+# Usage:
+#   # Train (downloads CIFAR-10, saves checkpoint to ./checkpoints/)
+#   docker compose run --rm train
+#
+#   # Serve (loads checkpoint from ./checkpoints/)
+#   docker compose up serve
+#
+#   # Both (train first, then serve)
+#   docker compose up
+# =============================================================================
+
+version: "3.9"
+
+services:
+  # ── Training service ────────────────────────────────────────────────────────
+  train:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    image: mlops-train:v1
+    container_name: mlops-trainer
+    volumes:
+      # Dataset cache (persisted between runs)
+      - ./data:/app/data
+      # Checkpoint output
+      - ./checkpoints:/app/checkpoints
+      # Mount local config so you can edit without rebuilding
+      - ./configs:/app/configs:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+      - OMP_NUM_THREADS=4
+    # Use the local config (relative paths) instead of the K8s config
+    command: ["--config", "/app/configs/training_config_local.yaml"]
+    restart: "no"
+
+  # ── Serving service ─────────────────────────────────────────────────────────
+  serve:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.serve
+    image: mlops-serve:v1
+    container_name: mlops-server
+    ports:
+      - "8080:8080"
+    volumes:
+      # Read-only access to the checkpoint produced by the train service
+      - ./checkpoints:/app/checkpoints:ro
+    environment:
+      - CHECKPOINT_PATH=/app/checkpoints/classifier_v1.pt
+      - MODEL_ARCH=resnet18
+      - NUM_CLASSES=10
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+    # Serving depends on a checkpoint existing; run train first
+    depends_on:
+      train:
+        condition: service_completed_successfully

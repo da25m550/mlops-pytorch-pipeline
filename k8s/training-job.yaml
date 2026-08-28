@@ -1,0 +1,148 @@
+# =============================================================================
+# k8s/training-job.yaml
+# Kubernetes Job that runs the CIFAR-10 training workload to completion.
+#
+# Prerequisites:
+#   kubectl apply -f k8s/namespace.yaml
+#   kubectl apply -f k8s/configmap.yaml
+#   kubectl apply -f k8s/pvc.yaml   (or create PVCs manually)
+#
+# Apply:
+#   kubectl apply -f k8s/training-job.yaml
+#
+# Monitor:
+#   kubectl logs -f job/cifar10-training -n ml-training
+#   kubectl get job cifar10-training -n ml-training
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PersistentVolumeClaims (data + checkpoints)
+# Defined here for convenience; can be split into a separate pvc.yaml.
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cifar10-data-pvc
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+    component: training
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-checkpoints-pvc
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+    component: training
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# Training Job
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: cifar10-training
+  namespace: ml-training
+  labels:
+    project: mlops-pytorch-pipeline
+    component: training
+    version: v1
+spec:
+  # Retry up to 2 times on failure
+  backoffLimit: 2
+  # Clean up finished Job pods after 1 hour
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        project: mlops-pytorch-pipeline
+        component: training
+        job-name: cifar10-training
+    spec:
+      restartPolicy: OnFailure
+
+      # ── Security context ──────────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      containers:
+        - name: trainer
+          image: mlops-train:v1
+          imagePullPolicy: IfNotPresent
+
+          # ── Command / args ───────────────────────────────────────────────
+          # ENTRYPOINT is already set in the Dockerfile; no override needed.
+          # Pass --config explicitly so the path is unambiguous.
+          args:
+            - "--config"
+            - "/app/configs/training_config.yaml"
+
+          # ── Environment variables ────────────────────────────────────────
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: OMP_NUM_THREADS
+              value: "4"
+            - name: MKL_NUM_THREADS
+              value: "4"
+
+          # ── Resource requests & limits ───────────────────────────────────
+          resources:
+            requests:
+              cpu: "2"
+              memory: "4Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+            # ── Bonus: GPU support (uncomment for GPU nodes) ───────────────
+            # limits:
+            #   nvidia.com/gpu: "1"
+
+          # ── Volume mounts ────────────────────────────────────────────────
+          volumeMounts:
+            # ConfigMap → /app/configs/training_config.yaml
+            - name: config-volume
+              mountPath: /app/configs
+              readOnly: true
+            # PVC for CIFAR-10 dataset cache
+            - name: data-volume
+              mountPath: /app/data
+            # PVC for model checkpoints (read-write during training)
+            - name: checkpoints-volume
+              mountPath: /app/checkpoints
+
+      # ── Volumes ───────────────────────────────────────────────────────────
+      volumes:
+        - name: config-volume
+          configMap:
+            name: training-config
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: cifar10-data-pvc
+        - name: checkpoints-volume
+          persistentVolumeClaim:
+            claimName: model-checkpoints-pvc
+
+      # ── Node selector / tolerations for GPU nodes (bonus) ─────────────────
+      # nodeSelector:
+      #   accelerator: nvidia-tesla-t4
+      # tolerations:
+      #   - key: "nvidia.com/gpu"
+      #     operator: "Exists"
+      #     effect: "NoSchedule"

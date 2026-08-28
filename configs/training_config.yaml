@@ -1,0 +1,31 @@
+# =============================================================================
+# training_config.yaml
+# Configuration for CIFAR-10 image classification training.
+# All values can be overridden via a mounted ConfigMap in Kubernetes.
+# =============================================================================
+
+model:
+  # Architecture: "resnet18" | "simplecnn"
+  architecture: resnet18
+  num_classes: 10
+  # Set pretrained: true to initialise ResNet-18 with ImageNet weights
+  pretrained: false
+
+training:
+  epochs: 30
+  batch_size: 128
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  # Early stopping: stop if val_loss does not improve for this many epochs
+  early_stopping_patience: 5
+
+data:
+  # Dataset: "cifar10" | "fashionmnist"
+  dataset: cifar10
+  # data_dir is overridden by the K8s PVC mount at /app/data
+  data_dir: /app/data
+
+output:
+  # checkpoint_dir is overridden by the K8s PVC mount at /app/checkpoints
+  checkpoint_dir: /app/checkpoints
+  model_name: classifier_v1.pt

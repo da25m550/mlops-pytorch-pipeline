@@ -1,0 +1,87 @@
+# =============================================================================
+# docker/Dockerfile.train
+# Multi-stage Dockerfile for the CIFAR-10 training workload.
+#
+# Build:
+#   docker build -f docker/Dockerfile.train -t mlops-train:v1 .
+#
+# Run (local):
+#   docker run --rm \
+#     -v $(pwd)/data:/app/data \
+#     -v $(pwd)/checkpoints:/app/checkpoints \
+#     mlops-train:v1
+#
+# Override config via env var:
+#   docker run --rm -e CONFIG_PATH=/app/configs/training_config.yaml \
+#     -v $(pwd)/data:/app/data \
+#     -v $(pwd)/checkpoints:/app/checkpoints \
+#     -v $(pwd)/configs:/app/configs \
+#     mlops-train:v1
+# =============================================================================
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1: dependency builder
+#   Installs all Python packages into a virtual-env so the final stage
+#   can simply copy the venv without re-running pip.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS builder
+
+# System build deps (needed to compile some wheels)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Copy only the requirements file first to leverage Docker layer caching.
+# The venv is rebuilt only when requirements change.
+COPY requirements/train.txt ./requirements/train.txt
+
+# Create an isolated virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip, then install all pinned dependencies
+RUN pip install --upgrade pip==24.2 && \
+    pip install --no-cache-dir -r requirements/train.txt
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2: training runtime
+#   Copies only the venv + application source; no build tools.
+# ─────────────────────────────────────────────────────────────────────────────
+FROM python:3.11-slim AS training
+
+# Metadata labels (OCI standard)
+LABEL org.opencontainers.image.title="mlops-train" \
+      org.opencontainers.image.description="CIFAR-10 PyTorch training image" \
+      org.opencontainers.image.version="1.0.0"
+
+# Activate the venv from the builder stage
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+WORKDIR /app
+
+# Copy application source and default config
+COPY src/      ./src/
+COPY configs/  ./configs/
+
+# Runtime environment variables
+# OMP/MKL thread caps prevent torch from starving other processes on shared nodes
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    OMP_NUM_THREADS=4 \
+    MKL_NUM_THREADS=4
+
+# Create directories that will be used as mount points for PVCs
+RUN mkdir -p /app/data /app/checkpoints
+
+# Run as non-root for security (UID 1000)
+RUN useradd --uid 1000 --no-create-home --shell /bin/false appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Default entry point — can be overridden in K8s Job spec
+ENTRYPOINT ["python", "src/train.py"]

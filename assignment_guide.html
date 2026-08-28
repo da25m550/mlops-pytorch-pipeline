@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MLOps Assignment 2 — Complete Guide (Ubuntu 22.04)</title>
+  <style>
+    :root {
+      --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+      --accent:#4f8ef7; --accent2:#7c5cbf; --green:#3ecf8e; --yellow:#f5c842;
+      --text:#e2e8f0; --muted:#8892a4; --code-bg:#141720; --radius:10px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7;font-size:15px}
+    .layout{display:flex;min-height:100vh}
+    nav{width:260px;min-width:260px;background:var(--surface);border-right:1px solid var(--border);padding:24px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+    nav .logo{padding:0 20px 20px;border-bottom:1px solid var(--border);margin-bottom:16px}
+    nav .logo h2{font-size:14px;color:var(--accent);font-weight:700}
+    nav .logo p{font-size:11px;color:var(--muted);margin-top:4px}
+    nav a{display:block;padding:8px 20px;color:var(--muted);text-decoration:none;font-size:13px;border-left:3px solid transparent;transition:all .15s}
+    nav a:hover{color:var(--text);border-left-color:var(--accent);background:rgba(79,142,247,.08)}
+    nav .sl{padding:14px 20px 4px;font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase}
+    main{flex:1;padding:40px 48px;max-width:980px}
+    .hero{background:linear-gradient(135deg,#1a1d27,#1e2240);border:1px solid var(--border);border-radius:var(--radius);padding:36px 40px;margin-bottom:40px}
+    .badge{display:inline-block;background:rgba(79,142,247,.15);color:var(--accent);border:1px solid rgba(79,142,247,.3);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:600;margin-bottom:14px}
+    .hero h1{font-size:28px;font-weight:800;line-height:1.3;margin-bottom:12px}
+    .hero h1 span{color:var(--accent)}
+    .hero p{color:var(--muted);font-size:15px;max-width:680px}
+    .meta{display:flex;gap:24px;margin-top:20px;flex-wrap:wrap}
+    .mi{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+    .dot{width:8px;height:8px;border-radius:50%}
+    .dg{background:var(--green)} .db{background:var(--accent)} .dy{background:var(--yellow)}
+    .section{margin-bottom:48px}
+    .sh{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+    .sh .num{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+    .sh h2{font-size:20px;font-weight:700}
+    .pts{margin-left:auto;background:rgba(62,207,142,.12);color:var(--green);border:1px solid rgba(62,207,142,.25);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600}
+    h3{font-size:15px;font-weight:700;margin:24px 0 10px;color:var(--text)}
+    h4{font-size:13px;font-weight:700;margin:16px 0 8px;color:var(--accent)}
+    p{margin-bottom:12px;color:var(--muted)}
+    ul,ol{padding-left:20px;margin-bottom:12px}
+    li{margin-bottom:6px;color:var(--muted)}
+    li strong{color:var(--text)}
+    a{color:var(--accent)}
+    pre{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;overflow-x:auto;margin:12px 0 20px;position:relative}
+    pre code{font-family:'Cascadia Code','Fira Code',Consolas,monospace;font-size:13px;color:#c9d1d9;line-height:1.6}
+    .cmd{color:#79c0ff} .cmt{color:#6a737d;font-style:italic} .ok{color:var(--green)}
+    .lbl-tag{position:absolute;top:10px;right:14px;font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--muted);text-transform:uppercase}
+    code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 6px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#a5d6ff}
+    .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin:16px 0}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+    .card .ci{font-size:22px;margin-bottom:8px}
+    .card h4{margin:0 0 4px;font-size:13px;color:var(--text)}
+    .card p{font-size:12px;margin:0}
+    .og{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+    .oi{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:14px 16px}
+    .oi.g{border-left-color:var(--green)} .oi.y{border-left-color:var(--yellow)} .oi.p{border-left-color:var(--accent2)}
+    .oi h4{margin:0 0 4px;font-size:13px;color:var(--text)} .oi p{font-size:12px;margin:0}
+    .step{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px}
+    .sth{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .stn{width:28px;height:28px;background:var(--surface2);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--accent);flex-shrink:0}
+    .sth h3{margin:0;font-size:14px}
+    .alert{border-radius:var(--radius);padding:14px 18px;margin:16px 0;font-size:13px;display:flex;gap:12px;align-items:flex-start}
+    .ai{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.25);color:#93c5fd}
+    .aw{background:rgba(245,200,66,.1);border:1px solid rgba(245,200,66,.25);color:#fde68a}
+    .ao{background:rgba(62,207,142,.1);border:1px solid rgba(62,207,142,.25);color:#6ee7b7}
+    .aico{font-size:16px;flex-shrink:0;margin-top:1px}
+    .tree{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;font-family:'Cascadia Code',monospace;font-size:13px;line-height:1.8}
+    .tree .td{color:var(--accent)} .tree .tf{color:#c9d1d9} .tree .tn{color:var(--muted);font-style:italic}
+    .arch{background:var(--code-bg);border:1px solid var(--border);border-radius:var(--radius);padding:24px;font-family:monospace;font-size:12px;line-height:1.9;color:#c9d1d9;overflow-x:auto}
+    .arch .ab{color:var(--accent)} .arch .aa{color:var(--muted)} .arch .al{color:var(--green)}
+    table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+    th{background:var(--surface2);color:var(--text);padding:10px 14px;text-align:left;font-weight:700;border-bottom:1px solid var(--border)}
+    td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--muted)}
+    tr:last-child td{border-bottom:none}
+    td code{font-size:12px}
+    .cl{list-style:none;padding:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+    .cl li{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;font-size:13px}
+    .cl li:last-child{border-bottom:none}
+    .ck{color:var(--green);font-size:16px}
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+    @media(max-width:768px){nav{display:none}main{padding:24px 20px}.og{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<nav>
+  <div class="logo">
+    <h2>MLOps Assignment 2</h2>
+    <p>Ubuntu 22.04 &middot; No GPU &middot; CPU Only</p>
+  </div>
+  <div class="sl">Overview</div>
+  <a href="#overview">&#128203; What We're Building</a>
+  <a href="#objectives">&#127919; Learning Objectives</a>
+  <a href="#files">&#128193; File Structure</a>
+  <div class="sl">Setup</div>
+  <a href="#workspace" style="color:#fde68a;border-left-color:#f5c842">&#128190; Workspace / Disk Quota Fix</a>
+  <a href="#prereqs">&#9881;&#65039; Prerequisites (Ubuntu)</a>
+  <a href="#copy">&#128194; Copy Project Files</a>
+  <div class="sl">Assignment Parts</div>
+  <a href="#partA">A &middot; GitHub Setup (15 pts)</a>
+  <a href="#partB">B &middot; PyTorch Model (10 pts)</a>
+  <a href="#partC">C &middot; Docker (30 pts)</a>
+  <a href="#partD">D &middot; K8s Training (10 pts)</a>
+  <a href="#partE">E &middot; K8s Serving (5 pts)</a>
+  <a href="#partF">F &middot; Validation (10 pts)</a>
+  <div class="sl">Reference</div>
+  <a href="#troubleshoot">&#128295; Troubleshooting</a>
+  <a href="#checklist">&#9989; Submission Checklist</a>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">IITM &middot; MLOps &amp; Infrastructure &middot; Individual Assignment</div>
+  <h1>Deploying PyTorch ML Workloads with<br/><span>Docker &amp; Kubernetes</span></h1>
+  <p>Take a CIFAR-10 image classifier from local Python training all the way to a
+     production-style Kubernetes deployment — with Docker containers, ConfigMaps,
+     PersistentVolumes, health probes, and horizontal autoscaling.</p>
+  <div class="meta">
+    <div class="mi"><div class="dot dg"></div>Ubuntu 22.04 LTS</div>
+    <div class="mi"><div class="dot db"></div>CPU Only (No GPU)</div>
+    <div class="mi"><div class="dot dy"></div>80 Points Total</div>
+    <div class="mi"><div class="dot dg"></div>Python 3.11 &middot; PyTorch 2.3</div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<div class="section" id="overview">
+  <div class="sh"><div class="num">&#128203;</div><h2>What We're Building</h2></div>
+
+  <p>This assignment walks through the <strong style="color:var(--text)">complete ML deployment lifecycle</strong>
+  for a CIFAR-10 image classifier — from raw Python code to a scalable, containerised,
+  Kubernetes-orchestrated production service.</p>
+
+  <div class="cg">
+    <div class="card"><div class="ci">&#129504;</div><h4>PyTorch Model</h4><p>ResNet-18 adapted for 32&times;32 CIFAR-10 images. Trains to ~85% val accuracy on CPU.</p></div>
+    <div class="card"><div class="ci">&#128025;</div><h4>Git Workflow</h4><p>Feature branches, PRs, Conventional Commits, GitHub Actions CI pipeline.</p></div>
+    <div class="card"><div class="ci">&#128051;</div><h4>Docker</h4><p>Multi-stage training image + slim CPU-only serving image with HEALTHCHECK.</p></div>
+    <div class="card"><div class="ci">&#9096;&#65039;</div><h4>Kubernetes</h4><p>Training Job, Serving Deployment, Service, ConfigMap, PVCs, HPA.</p></div>
+    <div class="card"><div class="ci">&#127760;</div><h4>REST API</h4><p>FastAPI server: POST /predict returns class probabilities, GET /health.</p></div>
+    <div class="card"><div class="ci">&#128300;</div><h4>Tests</h4><p>25+ pytest unit tests covering model, transforms, checkpoint round-trip.</p></div>
+  </div>
+
+  <div class="arch">
+<span class="ab">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;</span>
+<span class="ab">&#9474;</span>                    <span class="al">Developer Workflow</span>                                <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  feature/* <span class="aa">&#9472;&#9472;PR&#9472;&#9472;&#9658;</span> develop <span class="aa">&#9472;&#9472;PR&#9472;&#9472;&#9658;</span> main                              <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>       <span class="aa">&#9492;&#9472;&#9472;&#9472; GitHub Actions CI (lint &#9658; test &#9658; docker build) &#9472;&#9472;&#9472;&#9496;</span>       <span class="ab">&#9474;</span>
+<span class="ab">&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</span>
+
+<span class="ab">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;</span>
+<span class="ab">&#9474;</span>           <span class="al">Kubernetes Cluster  (ml-training namespace)</span>                <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  ConfigMap: training_config.yaml <span class="aa">&#9658;</span> mounted at /app/configs            <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  PVC: cifar10-data (5Gi)  +  PVC: model-checkpoints (2Gi)             <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>                    <span class="aa">&#9474;</span>                        <span class="aa">&#9474;</span>                            <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>                    <span class="aa">&#9660;</span>                        <span class="aa">&#9660;</span>                            <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  <span class="al">Job: cifar10-training</span>  (mlops-train:v1, 2CPU / 4Gi RAM)              <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>    Downloads CIFAR-10 &#9658; trains ResNet-18 &#9658; saves classifier_v1.pt     <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>                              <span class="aa">&#9660;</span>  (after Job completes)                   <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  <span class="al">Deployment: model-serving</span>  (2 replicas, rolling update)              <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>    mlops-serve:v1 &middot; liveness+readiness probes &middot; 500m CPU / 1Gi RAM    <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>                              <span class="aa">&#9660;</span>                                           <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  <span class="al">Service: model-serving</span>  (ClusterIP, port 80 &#9658; 8080)                  <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>                              <span class="aa">&#9660;</span>                                           <span class="ab">&#9474;</span>
+<span class="ab">&#9474;</span>  <span class="al">HPA: model-serving-hpa</span>  (2&#8211;10 replicas, CPU 70%)                     <span class="ab">&#9474;</span>
+<span class="ab">&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</span>
+  </div>
+</div>
+
+<!-- OBJECTIVES -->
+<div class="section" id="objectives">
+  <div class="sh"><div class="num">&#127919;</div><h2>Learning Objectives</h2></div>
+  <div class="og">
+    <div class="oi"><h4>1 &middot; Git &amp; CI/CD</h4><p>Structure an ML repo with branching, PRs, .gitignore, secrets management, and GitHub Actions.</p></div>
+    <div class="oi g"><h4>2 &middot; Docker for ML</h4><p>Write multi-stage Dockerfiles optimised for ML workloads — separate build and runtime stages.</p></div>
+    <div class="oi y"><h4>3 &middot; Kubernetes Jobs</h4><p>Deploy PyTorch training as a K8s Job with PersistentVolumeClaims and ConfigMaps.</p></div>
+    <div class="oi p"><h4>4 &middot; Model Serving</h4><p>Serve a trained model via a K8s Deployment with liveness/readiness probes and HPA.</p></div>
+    <div class="oi"><h4>5 &middot; Configuration</h4><p>Use ConfigMaps and environment variables for environment-specific configuration.</p></div>
+    <div class="oi g"><h4>6 &middot; End-to-End Pipeline</h4><p>Connect training &#9658; checkpoint storage &#9658; serving in a reproducible, scalable pipeline.</p></div>
+  </div>
+</div>
+
+<!-- FILE STRUCTURE -->
+<div class="section" id="files">
+  <div class="sh"><div class="num">&#128193;</div><h2>Project File Structure</h2></div>
+  <div class="tree">
+<span class="td">mlops-pytorch-pipeline/</span>
+&#9500;&#9472;&#9472; <span class="tf">README.md</span>              <span class="tn"># Architecture diagram + setup instructions</span>
+&#9500;&#9472;&#9472; <span class="tf">.gitignore</span>             <span class="tn"># Excludes data/, checkpoints/, .venv/, *.pt</span>
+&#9500;&#9472;&#9472; <span class="tf">docker-compose.yml</span>     <span class="tn"># Local Docker convenience wrapper</span>
+&#9500;&#9472;&#9472; <span class="td">.github/workflows/</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">ci.yml</span>             <span class="tn"># lint &#9658; test &#9658; docker build &#9658; k8s validate</span>
+&#9500;&#9472;&#9472; <span class="td">src/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">model.py</span>           <span class="tn"># ResNet-18 (CIFAR-adapted) + SimpleCNN</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">dataset.py</span>         <span class="tn"># CIFAR-10 / Fashion-MNIST data loaders</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">train.py</span>           <span class="tn"># Training loop: YAML config, JSON logging, early stop</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">serve.py</span>           <span class="tn"># FastAPI: GET /health, POST /predict</span>
+&#9500;&#9472;&#9472; <span class="td">configs/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">training_config.yaml</span>       <span class="tn"># K8s/Docker paths (/app/data)</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">training_config_local.yaml</span> <span class="tn"># Local paths (./data, ./checkpoints)</span>
+&#9500;&#9472;&#9472; <span class="td">docker/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">Dockerfile.train</span>   <span class="tn"># Multi-stage: builder + training runtime</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">Dockerfile.serve</span>   <span class="tn"># Slim: CPU-only torch, non-root, HEALTHCHECK</span>
+&#9500;&#9472;&#9472; <span class="td">k8s/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">namespace.yaml</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">configmap.yaml</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">training-job.yaml</span>  <span class="tn"># Includes PVC definitions</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">serving-deployment.yaml</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">serving-service.yaml</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">hpa.yaml</span>
+&#9500;&#9472;&#9472; <span class="td">requirements/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="tf">train.txt</span>          <span class="tn"># Full PyTorch + training deps (pinned)</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="tf">serve.txt</span>          <span class="tn"># CPU-only torch + FastAPI (pinned)</span>
+&#9492;&#9472;&#9472; <span class="td">tests/</span>
+    &#9492;&#9472;&#9472; <span class="tf">test_model.py</span>      <span class="tn"># 25+ pytest tests</span>
+  </div>
+</div>
+
+<!-- WORKSPACE SETUP (DISK QUOTA FIX) -->
+<div class="section" id="workspace">
+  <div class="sh"><div class="num">&#128190;</div><h2>Workspace Setup — Disk Quota Fix</h2></div>
+  <div class="alert aw">
+    <div class="aico">&#9888;&#65039;</div>
+    <div><strong>Important for shared Linux machines:</strong> If your home directory (<code>/usr2/asreeniv/</code>) has a disk quota, pip will fail with <code>Errno 122: Disk quota exceeded</code> when downloading PyTorch. Follow these steps to redirect ALL pip activity to the workspace (<code>/local/mnt/workspace/asreeniv/</code>).</div>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Clean up partial install from home directory</h3></div>
+    <pre><code><span class="cmt"># Remove anything pip partially wrote to the quota-limited home dir</span>
+<span class="cmd">rm -rf /usr2/asreeniv/.local/lib/python3.10/site-packages/</span>
+<span class="cmd">rm -rf /usr2/asreeniv/.local/lib/python3.10/</span>
+<span class="cmd">rm -rf /usr2/asreeniv/.cache/pip</span>
+<span class="cmt"># Verify home is clean</span>
+<span class="cmd">du -sh /usr2/asreeniv/.local/ 2>/dev/null || echo "Already clean"</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Create workspace directories &amp; symlink home → workspace</h3></div>
+    <pre><code><span class="cmt"># Create workspace dirs for pip</span>
+<span class="cmd">mkdir -p /local/mnt/workspace/asreeniv/.local</span>
+<span class="cmd">mkdir -p /local/mnt/workspace/asreeniv/.cache/pip</span>
+
+<span class="cmt"># Back up existing home dirs (if any)</span>
+<span class="cmd">[ -d /usr2/asreeniv/.local ] && mv /usr2/asreeniv/.local /usr2/asreeniv/.local.bak 2>/dev/null || true</span>
+<span class="cmd">[ -d /usr2/asreeniv/.cache ] && mv /usr2/asreeniv/.cache /usr2/asreeniv/.cache.bak 2>/dev/null || true</span>
+
+<span class="cmt"># Symlink ~/.local and ~/.cache → workspace</span>
+<span class="cmd">ln -sfn /local/mnt/workspace/asreeniv/.local  /usr2/asreeniv/.local</span>
+<span class="cmd">ln -sfn /local/mnt/workspace/asreeniv/.cache  /usr2/asreeniv/.cache</span>
+
+<span class="cmt"># Verify symlinks</span>
+<span class="cmd">ls -la /usr2/asreeniv/.local</span>
+<span class="cmd">ls -la /usr2/asreeniv/.cache</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Create Python venv inside workspace</h3></div>
+    <pre><code><span class="cmd">cd /local/mnt/workspace/asreeniv/mlops</span>
+<span class="cmt"># Remove any broken venv from previous attempts</span>
+<span class="cmd">rm -rf .venv</span>
+<span class="cmt"># Create fresh venv</span>
+<span class="cmd">python3 -m venv /local/mnt/workspace/asreeniv/mlops/.venv</span>
+<span class="cmd">source /local/mnt/workspace/asreeniv/mlops/.venv/bin/activate</span>
+<span class="cmt"># Confirm venv points to workspace</span>
+<span class="cmd">which python   </span><span class="cmt"># → /local/mnt/workspace/asreeniv/mlops/.venv/bin/python</span>
+<span class="cmd">which pip      </span><span class="cmt"># → /local/mnt/workspace/asreeniv/mlops/.venv/bin/pip</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">4</div><h3>Set pip cache to workspace &amp; install CPU-only PyTorch</h3></div>
+    <pre><code><span class="cmt"># Redirect pip cache (avoids home quota)</span>
+<span class="cmd">export PIP_CACHE_DIR=/local/mnt/workspace/asreeniv/.cache/pip</span>
+<span class="cmd">echo 'export PIP_CACHE_DIR=/local/mnt/workspace/asreeniv/.cache/pip' >> ~/.bashrc</span>
+
+<span class="cmd">pip install --upgrade pip</span>
+
+<span class="cmt"># CPU-only PyTorch (~200 MB, no CUDA packages)</span>
+<span class="cmd">pip install \
+    torch==2.3.1+cpu \
+    torchvision==0.18.1+cpu \
+    --index-url https://download.pytorch.org/whl/cpu</span>
+
+<span class="cmt"># Remaining dependencies</span>
+<span class="cmd">pip install \
+    PyYAML==6.0.2 numpy==1.26.4 Pillow==10.4.0 \
+    tqdm==4.66.4 pytest==8.3.2 pytest-cov==5.0.0</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">5</div><h3>Verify &amp; run training</h3></div>
+    <pre><code><span class="cmd">python -c "import torch; print('torch:', torch.__version__)"</span>
+<span class="ok">torch: 2.3.1+cpu</span>
+<span class="cmd">python -c "import torchvision; print('torchvision:', torchvision.__version__)"</span>
+<span class="ok">torchvision: 0.18.1+cpu</span>
+
+<span class="cmt"># Check disk usage is in workspace, not home</span>
+<span class="cmd">du -sh /local/mnt/workspace/asreeniv/mlops/.venv/</span>
+
+<span class="cmt"># Run training</span>
+<span class="cmd">cd /local/mnt/workspace/asreeniv/mlops</span>
+<span class="cmd">python src/train.py --config configs/training_config_local.yaml</span></code></pre>
+  </div>
+
+  <div class="alert ai">
+    <div class="aico">&#8505;&#65039;</div>
+    <div><strong>Future sessions:</strong> Always reactivate with:<br/>
+    <code>source /local/mnt/workspace/asreeniv/mlops/.venv/bin/activate</code><br/>
+    <code>export PIP_CACHE_DIR=/local/mnt/workspace/asreeniv/.cache/pip</code></div>
+  </div>
+</div>
+
+<!-- PREREQUISITES -->
+<div class="section" id="prereqs">
+  <div class="sh"><div class="num">&#9881;</div><h2>Prerequisites — Ubuntu 22.04</h2></div>
+  <div class="alert aw"><div class="aico">&#9888;&#65039;</div><div>Run all commands as a regular user (not root). Use <code>sudo</code> only where shown. Open a terminal with <strong>Ctrl+Alt+T</strong>.</div></div>
+
+  <h3>1. System update</h3>
+  <pre><code><span class="cmd">sudo apt update && sudo apt upgrade -y</span></code></pre>
+
+  <h3>2. Python 3.11</h3>
+  <pre><code><span class="cmt"># Ubuntu 22.04 ships Python 3.10; install 3.11 from deadsnakes PPA</span>
+<span class="cmd">sudo add-apt-repository ppa:deadsnakes/ppa -y</span>
+<span class="cmd">sudo apt update</span>
+<span class="cmd">sudo apt install -y python3.11 python3.11-venv python3.11-dev</span>
+<span class="cmd">python3.11 --version</span>   <span class="cmt"># should print Python 3.11.x</span></code></pre>
+
+  <h3>3. Git</h3>
+  <pre><code><span class="cmd">sudo apt install -y git</span>
+<span class="cmd">git config --global user.name  "Your Name"</span>
+<span class="cmd">git config --global user.email "you@example.com"</span>
+<span class="cmd">git --version</span></code></pre>
+
+  <h3>4. Docker Engine</h3>
+  <pre><code><span class="cmt"># Remove old versions (ignore errors if not installed)</span>
+<span class="cmd">sudo apt remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true</span>
+<span class="cmt"># Install via official script</span>
+<span class="cmd">curl -fsSL https://get.docker.com | sudo sh</span>
+<span class="cmt"># Add your user to docker group (no sudo needed for docker commands)</span>
+<span class="cmd">sudo usermod -aG docker $USER</span>
+<span class="cmd">newgrp docker</span>
+<span class="cmt"># Verify</span>
+<span class="cmd">docker --version</span>
+<span class="cmd">docker run --rm hello-world</span></code></pre>
+
+  <h3>5. kubectl</h3>
+  <pre><code><span class="cmd">curl -LO "https://dl.k8s.io/release/$(curl -sL https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"</span>
+<span class="cmd">sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl</span>
+<span class="cmd">kubectl version --client</span></code></pre>
+
+  <h3>6. Minikube</h3>
+  <pre><code><span class="cmd">curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64</span>
+<span class="cmd">sudo install minikube-linux-amd64 /usr/local/bin/minikube</span>
+<span class="cmd">minikube version</span></code></pre>
+
+  <h3>7. curl &amp; pip tools</h3>
+  <pre><code><span class="cmd">sudo apt install -y curl python3-pip</span></code></pre>
+</div>
+
+<!-- COPY FILES -->
+<div class="section" id="copy">
+  <div class="sh"><div class="num">&#128194;</div><h2>Project Location on Linux</h2></div>
+
+  <div class="alert ao">
+    <div class="aico">&#9989;</div>
+    <div>Project files are already at:<br/>
+    <code>/local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline/</code><br/>
+    Venv is at: <code>/local/mnt/workspace/asreeniv/mlops/.venv/</code></div>
+  </div>
+
+  <h3>Navigate to project root</h3>
+  <pre><code><span class="cmd">cd /local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline</span>
+<span class="cmd">source /local/mnt/workspace/asreeniv/mlops/.venv/bin/activate</span>
+<span class="cmd">export PIP_CACHE_DIR=/local/mnt/workspace/asreeniv/.cache/pip</span>
+<span class="cmd">ls</span>   <span class="cmt"># shows: README.md  src/  docker/  k8s/  configs/  requirements/  tests/</span></code></pre>
+
+  <h3>Install remaining Python dependencies</h3>
+  <pre><code><span class="cmt"># torch + torchvision already installed; install the rest</span>
+<span class="cmd">pip install \
+    PyYAML==6.0.2 numpy==1.26.4 Pillow==10.4.0 \
+    tqdm==4.66.4 pytest==8.3.2 pytest-cov==5.0.0</span></code></pre>
+
+  <div class="alert ai"><div class="aico">&#8505;&#65039;</div><div>All subsequent commands assume you are in <code>/local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline</code> with the venv active.</div></div>
+</div>
+
+<!-- PART A -->
+<div class="section" id="partA">
+  <div class="sh"><div class="num">A</div><h2>Part A — GitHub Repository Setup</h2><div class="pts">15 pts</div></div>
+  <p>Requires a <strong style="color:var(--text)">public GitHub repo</strong> named <code>mlops-pytorch-pipeline</code> with a branching strategy and at least 4 merged PRs (2 per week).</p>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Create repo on GitHub</h3></div>
+    <ol>
+      <li>Go to <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+      <li>Name: <code>mlops-pytorch-pipeline</code> &nbsp;|&nbsp; Visibility: <strong>Public</strong></li>
+      <li>Do <strong>NOT</strong> initialise with README &rarr; click <strong>Create repository</strong></li>
+    </ol>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Initialise Git and push to main</h3></div>
+    <pre><code><span class="cmd">cd /local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline</span>
+<span class="cmd">git init</span>
+<span class="cmd">git add .</span>
+<span class="cmd">git commit -m "chore: initial project scaffold with all source files"</span>
+<span class="cmd">git branch -M main</span>
+<span class="cmd">git remote add origin https://github.com/YOUR_USERNAME/mlops-pytorch-pipeline.git</span>
+<span class="cmd">git push -u origin main</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Create develop branch</h3></div>
+    <pre><code><span class="cmd">git checkout -b develop</span>
+<span class="cmd">git push -u origin develop</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">4</div><h3>Week 1 — PR 1: Model + Dataset + Training</h3></div>
+    <pre><code><span class="cmd">git checkout develop</span>
+<span class="cmd">git checkout -b feature/model-implementation</span>
+<span class="cmd">git add src/model.py src/dataset.py src/train.py configs/ requirements/</span>
+<span class="cmd">git commit -m "feat(model): add ResNet-18 CIFAR-10 adapter, dataset loader, and training loop"</span>
+<span class="cmd">git push -u origin feature/model-implementation</span>
+<span class="cmt"># Open PR on GitHub: feature/model-implementation → develop → Merge</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">5</div><h3>Week 1 — PR 2: Tests + CI</h3></div>
+    <pre><code><span class="cmd">git checkout develop && git pull</span>
+<span class="cmd">git checkout -b feature/tests-and-ci</span>
+<span class="cmd">git add tests/ .github/ .gitignore</span>
+<span class="cmd">git commit -m "test(ci): add pytest unit tests and GitHub Actions CI pipeline"</span>
+<span class="cmd">git push -u origin feature/tests-and-ci</span>
+<span class="cmt"># Open PR on GitHub: feature/tests-and-ci → develop → Merge</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">6</div><h3>Week 2 — PR 3: Docker</h3></div>
+    <pre><code><span class="cmd">git checkout develop && git pull</span>
+<span class="cmd">git checkout -b feature/docker-training</span>
+<span class="cmd">git add docker/ docker-compose.yml</span>
+<span class="cmd">git commit -m "feat(docker): add multi-stage training and serving Dockerfiles"</span>
+<span class="cmd">git push -u origin feature/docker-training</span>
+<span class="cmt"># Open PR on GitHub: feature/docker-training → develop → Merge</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">7</div><h3>Week 2 — PR 4: Kubernetes</h3></div>
+    <pre><code><span class="cmd">git checkout develop && git pull</span>
+<span class="cmd">git checkout -b feature/k8s-deployment</span>
+<span class="cmd">git add k8s/ src/serve.py</span>
+<span class="cmd">git commit -m "feat(k8s): add namespace, configmap, training job, serving deployment, HPA"</span>
+<span class="cmd">git push -u origin feature/k8s-deployment</span>
+<span class="cmt"># Open PR on GitHub: feature/k8s-deployment → develop → Merge</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">8</div><h3>Final merge to main</h3></div>
+    <pre><code><span class="cmd">git checkout main && git merge develop && git push origin main</span></code></pre>
+  </div>
+</div>
+
+<!-- PART B -->
+<div class="section" id="partB">
+  <div class="sh"><div class="num">B</div><h2>Part B — Local Python Training</h2><div class="pts">10 pts</div></div>
+
+  <div class="alert ao">
+    <div class="aico">&#9989;</div>
+    <div>Venv already created at <code>/local/mnt/workspace/asreeniv/mlops/.venv/</code> with torch 2.3.1+cpu installed. Skip to Step 2.</div>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Activate venv &amp; install remaining deps</h3></div>
+    <pre><code><span class="cmd">cd /local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline</span>
+<span class="cmd">source /local/mnt/workspace/asreeniv/mlops/.venv/bin/activate</span>
+<span class="cmd">export PIP_CACHE_DIR=/local/mnt/workspace/asreeniv/.cache/pip</span>
+<span class="cmt"># Install remaining deps (torch already installed)</span>
+<span class="cmd">pip install \
+    PyYAML==6.0.2 numpy==1.26.4 Pillow==10.4.0 \
+    tqdm==4.66.4 pytest==8.3.2 pytest-cov==5.0.0</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Run training (CPU)</h3></div>
+    <div class="alert aw"><div class="aico">&#9201;</div><div>On CPU, each epoch takes ~5–10 min for CIFAR-10 with ResNet-18. The local config uses <code>epochs: 5</code>. For a quick test, set <code>epochs: 2</code> in <code>configs/training_config_local.yaml</code>.</div></div>
+    <pre><code><span class="cmd">cd /local/mnt/workspace/asreeniv/mlops/mlops-pytorch-pipeline</span>
+<span class="cmd">python src/train.py --config configs/training_config_local.yaml</span></code></pre>
+    <p>Expected JSON-lines output:</p>
+    <pre><code><span class="ok">{"event": "config_loaded", "path": "configs/training_config_local.yaml"}</span>
+<span class="ok">{"event": "device_selected", "device": "cpu"}</span>
+<span class="ok">{"event": "model_created", "architecture": "resnet18", "trainable_params": 11173962}</span>
+<span class="ok">{"epoch": 1, "train_loss": 1.7234, "train_accuracy": 0.3812, "val_loss": 1.5891, ...}</span>
+<span class="ok">{"event": "checkpoint_saved", "path": "checkpoints/classifier_v1.pt"}</span>
+<span class="ok">{"event": "training_complete", "best_val_loss": 1.1234}</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Run unit tests</h3></div>
+    <pre><code><span class="cmd">pytest tests/ -v</span>
+<span class="cmt"># All 25+ tests pass without downloading any dataset</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">4</div><h3>Run inference server locally</h3></div>
+    <pre><code><span class="cmd">pip install -r requirements/serve.txt</span>
+<span class="cmd">CHECKPOINT_PATH=./checkpoints/classifier_v1.pt python src/serve.py</span></code></pre>
+    <p>In a second terminal:</p>
+    <pre><code><span class="cmd">curl http://localhost:8080/health</span>
+<span class="ok">{"status":"ok","model_loaded":true,"device":"cpu"}</span>
+
+<span class="cmd">python3 -c "from PIL import Image; Image.new('RGB',(32,32),(100,150,200)).save('test_image.png')"</span>
+<span class="cmd">curl -X POST http://localhost:8080/predict -F "image=@test_image.png"</span>
+<span class="ok">{"class_id":5,"class_name":"dog","confidence":0.182,"probabilities":{...}}</span></code></pre>
+  </div>
+</div>
+
+<!-- PART C -->
+<div class="section" id="partC">
+  <div class="sh"><div class="num">C</div><h2>Part C — Docker Containerisation</h2><div class="pts">30 pts</div></div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Build training image (multi-stage)</h3></div>
+    <pre><code><span class="cmd">docker build -f docker/Dockerfile.train -t mlops-train:v1 .</span>
+<span class="cmt"># First build: ~10-15 min. Subsequent builds: ~30 s (layer cache)</span>
+<span class="cmd">docker images mlops-train</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Build serving image (CPU-only, slim)</h3></div>
+    <pre><code><span class="cmd">docker build -f docker/Dockerfile.serve -t mlops-serve:v1 .</span>
+<span class="cmd">docker images mlops-serve</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Run training container</h3></div>
+    <pre><code><span class="cmd">mkdir -p data checkpoints</span>
+<span class="cmd">docker run --rm \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/checkpoints:/app/checkpoints \
+  mlops-train:v1</span>
+<span class="cmt"># Checkpoint saved to ./checkpoints/classifier_v1.pt when done</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">4</div><h3>Run serving container &amp; test</h3></div>
+    <pre><code><span class="cmd">docker run --rm -p 8080:8080 \
+  -v $(pwd)/checkpoints:/app/checkpoints \
+  mlops-serve:v1 &</span>
+
+<span class="cmt"># Wait ~10 s for startup, then test</span>
+<span class="cmd">curl http://localhost:8080/health</span>
+<span class="cmd">python3 -c "from PIL import Image; Image.new('RGB',(32,32),(100,150,200)).save('test_image.png')"</span>
+<span class="cmd">curl -X POST http://localhost:8080/predict -F "image=@test_image.png"</span></code></pre>
+    <div class="alert ao"><div class="aico">&#128247;</div><div>Screenshot these commands succeeding and include in your PR description for Part C.</div></div>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">5</div><h3>Verify image properties</h3></div>
+    <pre><code><span class="cmt"># Non-root user (should print 1001)</span>
+<span class="cmd">docker inspect mlops-serve:v1 --format '{{.Config.User}}'</span>
+<span class="cmt"># HEALTHCHECK configured</span>
+<span class="cmd">docker inspect mlops-serve:v1 --format '{{.Config.Healthcheck}}'</span>
+<span class="cmt"># Exposed port (should show 8080/tcp)</span>
+<span class="cmd">docker inspect mlops-serve:v1 --format '{{.Config.ExposedPorts}}'</span></code></pre>
+  </div>
+</div>
+
+<!-- PART D -->
+<div class="section" id="partD">
+  <div class="sh"><div class="num">D</div><h2>Part D — Kubernetes Training Job</h2><div class="pts">10 pts</div></div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Start Minikube</h3></div>
+    <pre><code><span class="cmd">minikube start --cpus=4 --memory=8192 --driver=docker</span>
+<span class="cmd">kubectl cluster-info</span>
+<span class="cmd">kubectl get nodes</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Load images into Minikube</h3></div>
+    <pre><code><span class="cmt"># Build directly inside Minikube's Docker daemon (recommended)</span>
+<span class="cmd">eval $(minikube docker-env)</span>
+<span class="cmd">docker build -f docker/Dockerfile.train -t mlops-train:v1 .</span>
+<span class="cmd">docker build -f docker/Dockerfile.serve -t mlops-serve:v1 .</span>
+<span class="cmt"># Verify</span>
+<span class="cmd">minikube image ls | grep mlops</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Apply namespace, ConfigMap, and Training Job</h3></div>
+    <pre><code><span class="cmd">kubectl apply -f k8s/namespace.yaml</span>
+<span class="cmd">kubectl apply -f k8s/configmap.yaml</span>
+<span class="cmd">kubectl apply -f k8s/training-job.yaml</span>
+
+<span class="cmt"># Verify PVCs created</span>
+<span class="cmd">kubectl get pvc -n ml-training</span>
+
+<span class="cmt"># Stream training logs</span>
+<span class="cmd">kubectl logs -f job/cifar10-training -n ml-training</span>
+
+<span class="cmt"># Wait for completion</span>
+<span class="cmd">kubectl wait --for=condition=complete job/cifar10-training -n ml-training --timeout=3600s</span></code></pre>
+    <div class="alert aw"><div class="aico">&#9201;</div><div>Training on CPU inside K8s takes ~30–60 min. To speed up, edit <code>k8s/configmap.yaml</code> and set <code>epochs: 3</code> before applying.</div></div>
+  </div>
+</div>
+
+<!-- PART E -->
+<div class="section" id="partE">
+  <div class="sh"><div class="num">E</div><h2>Part E — Kubernetes Model Serving</h2><div class="pts">5 pts</div></div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Deploy serving layer</h3></div>
+    <pre><code><span class="cmd">kubectl apply -f k8s/serving-deployment.yaml</span>
+<span class="cmd">kubectl apply -f k8s/serving-service.yaml</span>
+<span class="cmd">kubectl apply -f k8s/hpa.yaml</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Verify deployment</h3></div>
+    <pre><code><span class="cmd">kubectl rollout status deployment/model-serving -n ml-training</span>
+<span class="cmd">kubectl get pods -n ml-training</span>
+<span class="cmd">kubectl describe deployment model-serving -n ml-training</span>
+<span class="cmd">kubectl get hpa -n ml-training</span>
+<span class="cmd">kubectl get svc model-serving -n ml-training</span></code></pre>
+  </div>
+</div>
+
+<!-- PART F -->
+<div class="section" id="partF">
+  <div class="sh"><div class="num">F</div><h2>Part F — End-to-End Validation</h2><div class="pts">10 pts</div></div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">1</div><h3>Full status check</h3></div>
+    <pre><code><span class="cmd">kubectl get pods -n ml-training</span>
+<span class="cmt"># Expected:</span>
+<span class="ok">NAME                             READY   STATUS      RESTARTS   AGE</span>
+<span class="ok">cifar10-training-xxxxx           0/1     Completed   0          45m</span>
+<span class="ok">model-serving-xxxxxxxxx-aaaaa    1/1     Running     0          5m</span>
+<span class="ok">model-serving-xxxxxxxxx-bbbbb    1/1     Running     0          5m</span></code></pre>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">2</div><h3>Port-forward and test prediction</h3></div>
+    <pre><code><span class="cmt"># Start port-forward in background</span>
+<span class="cmd">kubectl port-forward svc/model-serving 8080:80 -n ml-training &</span>
+
+<span class="cmd">curl http://localhost:8080/health</span>
+<span class="ok">{"status":"ok","model_loaded":true,"device":"cpu"}</span>
+
+<span class="cmd">python3 -c "from PIL import Image; Image.new('RGB',(32,32),(100,150,200)).save('test_image.png')"</span>
+<span class="cmd">curl -X POST http://localhost:8080/predict -F "image=@test_image.png"</span>
+<span class="ok">{"class_id":5,"class_name":"dog","confidence":0.182,"probabilities":{...}}</span></code></pre>
+    <div class="alert ao"><div class="aico">&#128247;</div><div>Screenshot all terminal output above and include in your final PR description.</div></div>
+  </div>
+
+  <div class="step">
+    <div class="sth"><div class="stn">3</div><h3>Collect all required screenshots</h3></div>
+    <pre><code><span class="cmt"># 1. Training job logs (last 20 lines)</span>
+<span class="cmd">kubectl logs job/cifar10-training -n ml-training | tail -20</span>
+<span class="cmt"># 2. All pods</span>
+<span class="cmd">kubectl get pods -n ml-training</span>
+<span class="cmt"># 3. Deployment details</span>
+<span class="cmd">kubectl describe deployment model-serving -n ml-training</span>
+<span class="cmt"># 4. HPA</span>
+<span class="cmd">kubectl get hpa -n ml-training</span>
+<span class="cmt"># 5. Prediction response (shown above)</span></code></pre>
+  </div>
+</div>
+
+<!-- TROUBLESHOOTING -->
+<div class="section" id="troubleshoot">
+  <div class="sh"><div class="num">&#128295;</div><h2>Troubleshooting</h2></div>
+  <table>
+    <tr><th>Problem</th><th>Fix</th></tr>
+    <tr><td><code>docker: permission denied</code></td><td>Run <code>sudo usermod -aG docker $USER && newgrp docker</code></td></tr>
+    <tr><td>Training very slow on CPU</td><td>Set <code>epochs: 3</code> in <code>configs/training_config_local.yaml</code></td></tr>
+    <tr><td>Minikube out of memory</td><td>Set <code>batch_size: 32</code> in <code>k8s/configmap.yaml</code></td></tr>
+    <tr><td><code>ImagePullBackOff</code> in K8s</td><td>Run <code>eval $(minikube docker-env)</code> then rebuild images</td></tr>
+    <tr><td>Port 8080 already in use</td><td>Run <code>sudo lsof -i :8080</code> then kill the PID</td></tr>
+    <tr><td><code>kubectl</code> can't find cluster</td><td>Run <code>minikube start</code> first</td></tr>
+    <tr><td>Checkpoint not found in K8s</td><td>Check job completed: <code>kubectl get job -n ml-training</code></td></tr>
+    <tr><td><code>pip install</code> SSL error</td><td>Run <code>pip install --trusted-host pypi.org -r requirements/train.txt</code></td></tr>
+    <tr><td>Serving pod stuck in <code>Pending</code></td><td>Check resources: <code>kubectl describe pod &lt;name&gt; -n ml-training</code></td></tr>
+    <tr><td>GitHub push rejected</td><td>Set up SSH key or use <code>git config --global credential.helper store</code></td></tr>
+  </table>
+</div>
+
+<!-- CHECKLIST -->
+<div class="section" id="checklist">
+  <div class="sh"><div class="num">&#9989;</div><h2>Submission Checklist</h2></div>
+  <ul class="cl">
+    <li><span class="ck">&#9744;</span> GitHub repo <code>mlops-pytorch-pipeline</code> is public</li>
+    <li><span class="ck">&#9744;</span> <code>develop</code> branch exists and is up to date</li>
+    <li><span class="ck">&#9744;</span> At least 4 merged PRs (2 per week) with meaningful descriptions</li>
+    <li><span class="ck">&#9744;</span> All code merged to <code>main</code></li>
+    <li><span class="ck">&#9744;</span> <code>README.md</code> has architecture diagram and setup instructions</li>
+    <li><span class="ck">&#9744;</span> GitHub Actions CI passes (lint + test + docker build)</li>
+    <li><span class="ck">&#9744;</span> Docker build + run screenshots in PR 3 description</li>
+    <li><span class="ck">&#9744;</span> <code>curl /health</code> and <code>curl /predict</code> screenshots in PR 3</li>
+    <li><span class="ck">&#9744;</span> <code>kubectl get pods</code> screenshot showing Job Completed + 2 Running pods</li>
+    <li><span class="ck">&#9744;</span> <code>kubectl describe deployment model-serving</code> screenshot</li>
+    <li><span class="ck">&#9744;</span> Kubernetes prediction endpoint screenshot</li>
+    <li><span class="ck">&#9744;</span> 300–500 word reflective write-up in README.md</li>
+    <li><span class="ck">&#9744;</span> GitHub repo link submitted on course platform</li>
+    <li><span class="ck">&#9744;</span> Final PR link submitted on course platform</li>
+  </ul>
+</div>
+
+</main>
+</div>
+</body>
+</html>
