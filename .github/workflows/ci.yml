@@ -42,6 +42,9 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: |
+            requirements/train.txt
+            requirements/serve.txt
 
       - name: Install linting tools
         run: pip install ruff==0.5.5 black==24.8.0
@@ -68,6 +71,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
+          cache-dependency-path: |
+            requirements/train.txt
+            requirements/serve.txt
+
 
       - name: Install dependencies
         run: |
