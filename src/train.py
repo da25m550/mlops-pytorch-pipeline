@@ -28,8 +28,8 @@ import time
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 import yaml
+from torch import nn
 from torch.amp import GradScaler
 
 # Allow running from repo root OR from inside src/
@@ -37,13 +37,13 @@ _SRC = Path(__file__).parent
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from dataset import get_dataloaders          # noqa: E402
-from model import get_model                  # noqa: E402
-
+from dataset import get_dataloaders
+from model import get_model
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _log(obj: dict) -> None:
     """Emit a JSON-lines log entry to stdout (flushed immediately)."""
@@ -79,14 +79,14 @@ def resolve_config_path(cli_path: str | None) -> Path:
         if p.exists():
             return p
     raise FileNotFoundError(
-        "Could not find training_config.yaml. "
-        f"Tried: {[str(c) for c in candidates]}"
+        "Could not find training_config.yaml. " f"Tried: {[str(c) for c in candidates]}"
     )
 
 
 # ---------------------------------------------------------------------------
 # Training / evaluation steps
 # ---------------------------------------------------------------------------
+
 
 def train_one_epoch(
     model: nn.Module,
@@ -169,6 +169,7 @@ def evaluate(
 # Main training routine
 # ---------------------------------------------------------------------------
 
+
 def main(cli_config_path: str | None = None) -> None:
     # ── Config ──────────────────────────────────────────────────────────────
     config_path = resolve_config_path(cli_config_path)
@@ -185,11 +186,13 @@ def main(cli_config_path: str | None = None) -> None:
         num_classes=config["model"]["num_classes"],
     ).to(device)
     n_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    _log({
-        "event": "model_created",
-        "architecture": config["model"]["architecture"],
-        "trainable_params": n_params,
-    })
+    _log(
+        {
+            "event": "model_created",
+            "architecture": config["model"]["architecture"],
+            "trainable_params": n_params,
+        }
+    )
 
     # ── Data ────────────────────────────────────────────────────────────────
     train_loader, val_loader = get_dataloaders(
@@ -197,12 +200,14 @@ def main(cli_config_path: str | None = None) -> None:
         batch_size=config["training"]["batch_size"],
         dataset=config["data"].get("dataset", "cifar10"),
     )
-    _log({
-        "event": "data_loaded",
-        "dataset": config["data"].get("dataset", "cifar10"),
-        "train_batches": len(train_loader),
-        "val_batches": len(val_loader),
-    })
+    _log(
+        {
+            "event": "data_loaded",
+            "dataset": config["data"].get("dataset", "cifar10"),
+            "train_batches": len(train_loader),
+            "val_batches": len(val_loader),
+        }
+    )
 
     # ── Optimiser & scheduler ───────────────────────────────────────────────
     optimizer = torch.optim.AdamW(
@@ -217,9 +222,7 @@ def main(cli_config_path: str | None = None) -> None:
     criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 
     # Mixed-precision scaler (GPU only; None on CPU)
-    scaler: GradScaler | None = (
-        GradScaler("cuda") if device.type == "cuda" else None
-    )
+    scaler: GradScaler | None = GradScaler("cuda") if device.type == "cuda" else None
 
     # ── Checkpoint dir ──────────────────────────────────────────────────────
     checkpoint_dir = Path(config["output"]["checkpoint_dir"])
@@ -246,15 +249,17 @@ def main(cli_config_path: str | None = None) -> None:
         elapsed = time.perf_counter() - t0
         current_lr = scheduler.get_last_lr()[0]
 
-        _log({
-            "epoch": epoch,
-            "train_loss": round(train_loss, 4),
-            "train_accuracy": round(train_acc, 4),
-            "val_loss": round(val_loss, 4),
-            "val_accuracy": round(val_acc, 4),
-            "learning_rate": round(current_lr, 8),
-            "epoch_time_s": round(elapsed, 2),
-        })
+        _log(
+            {
+                "epoch": epoch,
+                "train_loss": round(train_loss, 4),
+                "train_accuracy": round(train_acc, 4),
+                "val_loss": round(val_loss, 4),
+                "val_accuracy": round(val_acc, 4),
+                "learning_rate": round(current_lr, 8),
+                "epoch_time_s": round(elapsed, 2),
+            }
+        )
 
         # ── Checkpoint on improvement ────────────────────────────────────
         if val_loss < best_val_loss:
@@ -272,32 +277,40 @@ def main(cli_config_path: str | None = None) -> None:
                 },
                 best_ckpt_path,
             )
-            _log({
-                "event": "checkpoint_saved",
-                "path": str(best_ckpt_path),
-                "val_loss": round(val_loss, 4),
-                "val_accuracy": round(val_acc, 4),
-            })
+            _log(
+                {
+                    "event": "checkpoint_saved",
+                    "path": str(best_ckpt_path),
+                    "val_loss": round(val_loss, 4),
+                    "val_accuracy": round(val_acc, 4),
+                }
+            )
         else:
             patience_counter += 1
-            _log({
-                "event": "no_improvement",
-                "patience_counter": patience_counter,
-                "patience_limit": patience,
-            })
+            _log(
+                {
+                    "event": "no_improvement",
+                    "patience_counter": patience_counter,
+                    "patience_limit": patience,
+                }
+            )
             if patience_counter >= patience:
-                _log({
-                    "event": "early_stopping",
-                    "epoch": epoch,
-                    "best_val_loss": round(best_val_loss, 4),
-                })
+                _log(
+                    {
+                        "event": "early_stopping",
+                        "epoch": epoch,
+                        "best_val_loss": round(best_val_loss, 4),
+                    }
+                )
                 break
 
-    _log({
-        "event": "training_complete",
-        "best_val_loss": round(best_val_loss, 4),
-        "checkpoint": str(best_ckpt_path),
-    })
+    _log(
+        {
+            "event": "training_complete",
+            "best_val_loss": round(best_val_loss, 4),
+            "checkpoint": str(best_ckpt_path),
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -305,9 +318,7 @@ def main(cli_config_path: str | None = None) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Train a CIFAR-10 classifier."
-    )
+    parser = argparse.ArgumentParser(description="Train a CIFAR-10 classifier.")
     parser.add_argument(
         "--config",
         type=str,

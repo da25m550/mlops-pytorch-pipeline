@@ -8,13 +8,13 @@ lightweight CNN. Architecture is selected via training_config.yaml.
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 import torchvision.models as tv_models
-
+from torch import nn
 
 # ---------------------------------------------------------------------------
 # Custom lightweight CNN (fallback / fast-training option)
 # ---------------------------------------------------------------------------
+
 
 class ConvBlock(nn.Module):
     """Conv → BN → ReLU block."""
@@ -22,8 +22,9 @@ class ConvBlock(nn.Module):
     def __init__(self, in_ch: int, out_ch: int, stride: int = 1) -> None:
         super().__init__()
         self.block = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=stride,
-                      padding=1, bias=False),
+            nn.Conv2d(
+                in_ch, out_ch, kernel_size=3, stride=stride, padding=1, bias=False
+            ),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
         )
@@ -46,20 +47,20 @@ class SimpleCNN(nn.Module):
             # Block 1
             ConvBlock(3, 64),
             ConvBlock(64, 64),
-            nn.MaxPool2d(2, 2),          # 16×16
+            nn.MaxPool2d(2, 2),  # 16×16
             nn.Dropout2d(0.1),
             # Block 2
             ConvBlock(64, 128),
             ConvBlock(128, 128),
-            nn.MaxPool2d(2, 2),          # 8×8
+            nn.MaxPool2d(2, 2),  # 8×8
             nn.Dropout2d(0.1),
             # Block 3
             ConvBlock(128, 256),
             ConvBlock(256, 256),
-            nn.MaxPool2d(2, 2),          # 4×4
+            nn.MaxPool2d(2, 2),  # 4×4
             nn.Dropout2d(0.2),
         )
-        self.gap = nn.AdaptiveAvgPool2d(1)   # 1×1
+        self.gap = nn.AdaptiveAvgPool2d(1)  # 1×1
         self.classifier = nn.Sequential(
             nn.Flatten(),
             nn.Linear(256, 512),
@@ -77,6 +78,7 @@ class SimpleCNN(nn.Module):
 # ---------------------------------------------------------------------------
 # ResNet-18 adapted for CIFAR-10
 # ---------------------------------------------------------------------------
+
 
 class ResNet18CIFAR(nn.Module):
     """
