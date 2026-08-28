@@ -4,4 +4,3 @@ target-version = "py311"
 
 [tool.ruff.lint]
 ignore = ["E402"]
-include = ["src/**/*.py", "tests/**/*.py"]
