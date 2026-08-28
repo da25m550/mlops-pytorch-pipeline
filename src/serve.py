@@ -42,8 +42,8 @@ _SRC = Path(__file__).parent
 if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
-from dataset import get_class_names
-from model import get_model
+from dataset import get_class_names  # noqa: E402
+from model import get_model  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Logging
