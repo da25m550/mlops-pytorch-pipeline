@@ -1,3 +1,6 @@
+# Author: Arun Kumar S | Roll Number: DA25M550
+# Note: Missed created PRs while checking in base code. Hence adding this comment to demonstrate Github PR feature and working
+
 # ruff: noqa: B008
 """
 serve.py - FastAPI inference server for the CIFAR-10 classifier.
