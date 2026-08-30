@@ -1,3 +1,6 @@
+# Author: Arun Kumar S | Roll Number: DA25M550
+# Note: Missed created PRs while checking in base code. Hence adding this comment to demonstrate Github PR feature and working
+
 """
 tests/test_model.py
 Unit and integration tests for the CIFAR-10 ML pipeline.
